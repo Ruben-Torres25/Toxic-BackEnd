@@ -15,6 +15,7 @@ const orders_module_1 = require("./orders/orders.module");
 const customers_module_1 = require("./customers/customers.module");
 const stock_module_1 = require("./stock/stock.module");
 const suppliers_module_1 = require("./suppliers/suppliers.module");
+const auth_module_1 = require("./auth/auth.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,6 +28,7 @@ exports.AppModule = AppModule = __decorate([
             customers_module_1.CustomersModule,
             stock_module_1.StockModule,
             suppliers_module_1.SuppliersModule,
+            auth_module_1.AuthModule,
         ],
     })
 ], AppModule);

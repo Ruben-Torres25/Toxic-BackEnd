@@ -12,43 +12,39 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PurchasesController = void 0;
+exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
-const purchases_service_1 = require("./purchases.service");
-const create_purchase_dto_1 = require("./dto/create-purchase.dto");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
-let PurchasesController = class PurchasesController {
+const auth_service_1 = require("./auth.service");
+const login_dto_1 = require("./dto/login.dto");
+const signup_dto_1 = require("./dto/signup.dto");
+let AuthController = class AuthController {
     constructor(service) {
         this.service = service;
     }
-    list() {
-        return this.service.findAll();
+    login(dto) {
+        return this.service.login(dto);
     }
-    create(dto) {
-        return this.service.create(dto);
+    signup(dto) {
+        return this.service.signup(dto);
     }
 };
-exports.PurchasesController = PurchasesController;
+exports.AuthController = AuthController;
 __decorate([
-    (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], PurchasesController.prototype, "list", null);
-__decorate([
-    (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_purchase_dto_1.CreatePurchaseDto]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", void 0)
-], PurchasesController.prototype, "create", null);
-exports.PurchasesController = PurchasesController = __decorate([
-    (0, common_1.Controller)('purchases'),
-    __metadata("design:paramtypes", [purchases_service_1.PurchasesService])
-], PurchasesController);
-//# sourceMappingURL=purchases.controller.js.map
+], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('signup'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [signup_dto_1.SignupDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "signup", null);
+exports.AuthController = AuthController = __decorate([
+    (0, common_1.Controller)('auth'),
+    __metadata("design:paramtypes", [auth_service_1.AuthService])
+], AuthController);
+//# sourceMappingURL=auth.controller.js.map

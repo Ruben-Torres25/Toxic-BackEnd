@@ -4,4 +4,5 @@ export declare class User {
     passwordHash: string;
     role: string;
     createdAt: Date;
+    updatedAt: Date;
 }
