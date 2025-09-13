@@ -15,34 +15,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StockController = void 0;
 const common_1 = require("@nestjs/common");
 const stock_service_1 = require("./stock.service");
-const create_stock_movement_dto_1 = require("./dto/create-stock-movement.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let StockController = class StockController {
     constructor(service) {
         this.service = service;
     }
-    list() {
-        return this.service.findAll();
-    }
-    create(dto) {
-        return this.service.create(dto);
+    findAll(query) {
+        return this.service.findAll(query);
     }
 };
 exports.StockController = StockController;
 __decorate([
     (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Query)('query')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], StockController.prototype, "list", null);
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_stock_movement_dto_1.CreateStockMovementDto]),
-    __metadata("design:returntype", void 0)
-], StockController.prototype, "create", null);
+], StockController.prototype, "findAll", null);
 exports.StockController = StockController = __decorate([
     (0, common_1.Controller)('stock'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [stock_service_1.StockService])
 ], StockController);
 //# sourceMappingURL=stock.controller.js.map

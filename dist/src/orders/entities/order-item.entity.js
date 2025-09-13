@@ -21,11 +21,11 @@ __decorate([
     __metadata("design:type", String)
 ], OrderItem.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => order_entity_1.Order, (o) => o.items, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => order_entity_1.Order, (order) => order.items, { onDelete: 'CASCADE' }),
     __metadata("design:type", order_entity_1.Order)
 ], OrderItem.prototype, "order", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => product_entity_1.Product),
+    (0, typeorm_1.ManyToOne)(() => product_entity_1.Product, { eager: true }),
     __metadata("design:type", product_entity_1.Product)
 ], OrderItem.prototype, "product", void 0);
 __decorate([
@@ -39,7 +39,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2 }),
     __metadata("design:type", Number)
-], OrderItem.prototype, "total", void 0);
+], OrderItem.prototype, "subtotal", void 0);
 exports.OrderItem = OrderItem = __decorate([
     (0, typeorm_1.Entity)('order_items')
 ], OrderItem);

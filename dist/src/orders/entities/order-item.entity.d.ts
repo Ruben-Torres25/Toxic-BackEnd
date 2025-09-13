@@ -6,5 +6,5 @@ export declare class OrderItem {
     product: Product;
     qty: number;
     price: number;
-    total: number;
+    subtotal: number;
 }

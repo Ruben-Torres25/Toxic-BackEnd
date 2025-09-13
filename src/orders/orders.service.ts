@@ -16,7 +16,7 @@ export class OrdersService {
     @InjectRepository(Product) private products: Repository<Product>,
     @InjectRepository(Customer) private customers: Repository<Customer>,
     private dataSource: DataSource,
-    private stockService: StockService,   // 👈 inyectamos StockService
+    private stockService: StockService,
   ) {}
 
   async list() {
@@ -48,10 +48,17 @@ export class OrdersService {
     for (const it of dto.items) {
       const p = await this.products.findOne({ where: { id: it.productId } });
       if (!p) throw new NotFoundException('Producto no encontrado');
+
       const price = it.price ?? Number(p.price);
-      const total = price * it.qty;
-      subtotal += total;
-      const item = this.items.create({ product: p, qty: it.qty, price, total });
+      const lineTotal = price * it.qty;
+      subtotal += lineTotal;
+
+      const item = this.items.create({
+        product: p,
+        qty: it.qty,
+        price,
+        subtotal: lineTotal,   // 👈 corregido
+      });
       order.items.push(item);
     }
 
@@ -74,10 +81,10 @@ export class OrdersService {
         const p = await trx.getRepository(Product).findOne({ where: { id: it.product.id } });
         if (!p) throw new NotFoundException('Producto no encontrado');
         if (p.stock < it.qty) throw new BadRequestException(`Stock insuficiente para ${p.name}`);
+
         p.stock -= it.qty;
         await trx.getRepository(Product).save(p);
 
-        // 👇 Registramos movimiento de stock (salida por venta)
         await this.stockService.create({
           productId: p.id,
           quantity: it.qty,
@@ -106,10 +113,10 @@ export class OrdersService {
       for (const it of order.items) {
         const p = await trx.getRepository(Product).findOne({ where: { id: it.product.id } });
         if (!p) throw new NotFoundException('Producto no encontrado');
+
         p.stock += it.qty;
         await trx.getRepository(Product).save(p);
 
-        // 👇 Registramos movimiento de stock (entrada por cancelación)
         await this.stockService.create({
           productId: p.id,
           quantity: it.qty,

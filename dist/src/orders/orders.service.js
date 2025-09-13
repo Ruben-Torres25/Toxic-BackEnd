@@ -59,9 +59,14 @@ let OrdersService = class OrdersService {
             if (!p)
                 throw new common_1.NotFoundException('Producto no encontrado');
             const price = (_a = it.price) !== null && _a !== void 0 ? _a : Number(p.price);
-            const total = price * it.qty;
-            subtotal += total;
-            const item = this.items.create({ product: p, qty: it.qty, price, total });
+            const lineTotal = price * it.qty;
+            subtotal += lineTotal;
+            const item = this.items.create({
+                product: p,
+                qty: it.qty,
+                price,
+                subtotal: lineTotal,
+            });
             order.items.push(item);
         }
         order.subtotal = subtotal;

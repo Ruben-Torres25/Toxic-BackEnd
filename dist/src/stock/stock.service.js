@@ -23,20 +23,26 @@ let StockService = class StockService {
         this.movements = movements;
         this.products = products;
     }
-    async create(dto) {
-        const product = await this.products.findOne({ where: { id: dto.productId } });
+    async create(data) {
+        const product = await this.products.findOne({ where: { id: data.productId } });
         if (!product)
             throw new common_1.NotFoundException('Producto no encontrado');
         const movement = this.movements.create({
             product,
-            quantity: dto.quantity,
-            type: dto.type,
-            reason: dto.reason || '',
+            quantity: data.quantity,
+            type: data.type,
+            reason: data.reason,
         });
         return this.movements.save(movement);
     }
-    async findAll() {
-        return this.movements.find({ order: { createdAt: 'DESC' } });
+    async findAll(query) {
+        const qb = this.movements.createQueryBuilder('m')
+            .leftJoinAndSelect('m.product', 'p')
+            .orderBy('m.createdAt', 'DESC');
+        if (query) {
+            qb.where('p.name ILIKE :q OR p.sku ILIKE :q OR m.reason ILIKE :q', { q: `%${query}%` });
+        }
+        return qb.getMany();
     }
 };
 exports.StockService = StockService;

@@ -9,9 +9,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StockModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const stock_movement_entity_1 = require("./entities/stock-movement.entity");
 const stock_service_1 = require("./stock.service");
 const stock_controller_1 = require("./stock.controller");
-const stock_movement_entity_1 = require("./entities/stock-movement.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 let StockModule = class StockModule {
 };
@@ -19,8 +19,8 @@ exports.StockModule = StockModule;
 exports.StockModule = StockModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([stock_movement_entity_1.StockMovement, product_entity_1.Product])],
-        controllers: [stock_controller_1.StockController],
         providers: [stock_service_1.StockService],
+        controllers: [stock_controller_1.StockController],
         exports: [stock_service_1.StockService],
     })
 ], StockModule);

@@ -28,11 +28,11 @@ __decorate([
     __metadata("design:type", Number)
 ], StockMovement.prototype, "quantity", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text' }),
+    (0, typeorm_1.Column)({ type: 'varchar' }),
     __metadata("design:type", String)
 ], StockMovement.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", String)
 ], StockMovement.prototype, "reason", void 0);
 __decorate([
