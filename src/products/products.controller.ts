@@ -1,15 +1,15 @@
-import { 
-  Body, 
-  Controller, 
-  DefaultValuePipe, 
-  Delete, 
-  Get, 
-  Param, 
-  ParseIntPipe, 
-  Patch, 
-  Post, 
-  Query, 
-  UseGuards 
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -33,7 +33,7 @@ export class ProductsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')  // solo admin puede crear
+  @Roles('ADMIN') // solo admin puede crear
   create(@Body() dto: CreateProductDto) {
     return this.service.create(dto);
   }
@@ -45,14 +45,14 @@ export class ProductsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')  // solo admin puede modificar
+  @Roles('ADMIN') // solo admin puede modificar
   update(@Param('id') id: string, @Body() body: UpdateProductDto) {
     return this.service.update(id, body);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')  // solo admin puede borrar
+  @Roles('ADMIN') // solo admin puede borrar
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

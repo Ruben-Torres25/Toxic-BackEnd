@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { Product } from '../products/entities/product.entity';
 
@@ -11,39 +11,49 @@ export class ReportsService {
     @InjectRepository(Product) private products: Repository<Product>,
   ) {}
 
-  // 🔹 Total de ventas en un rango de fechas
+  // Total de ventas en un rango (status COMPLETADO)
   async sales(from?: string, to?: string) {
     const qb = this.orders.createQueryBuilder('o')
+      .select('SUM(o.total)', 'total')
+      .addSelect('COUNT(o.id)', 'orders')
       .where('o.status = :status', { status: 'COMPLETADO' });
 
     if (from) qb.andWhere('o.createdAt >= :from', { from });
     if (to) qb.andWhere('o.createdAt <= :to', { to });
 
-    const total = await qb.select('SUM(o.total)', 'sum').getRawOne();
-    return { total: Number(total.sum) || 0 };
+    const row = await qb.getRawOne<{ total: string; orders: string }>();
+    return {
+      total: Number(row?.total ?? 0),
+      orders: Number(row?.orders ?? 0),
+      from: from ?? null,
+      to: to ?? null,
+    };
   }
 
-  // 🔹 Productos más vendidos
+  // Top productos vendidos (por cantidad)
   async topProducts(limit = 5) {
-    const qb = this.orders.createQueryBuilder('o')
-      .leftJoin('o.items', 'i')
-      .leftJoin('i.product', 'p')
-      .select('p.name', 'name')
-      .addSelect('SUM(i.qty)', 'qty')
+    const qb = this.orders.manager
+      .createQueryBuilder()
+      .select('p.id', 'productId')
+      .addSelect('p.name', 'name')
+      .addSelect('SUM(oi.qty)', 'qty')
+      .from('order_items', 'oi')
+      .innerJoin('products', 'p', 'p.id = oi.productId')
+      .innerJoin('orders', 'o', 'o.id = oi.orderId')
       .where('o.status = :status', { status: 'COMPLETADO' })
-      .groupBy('p.id')
+      .groupBy('p.id, p.name')
       .orderBy('qty', 'DESC')
       .limit(limit);
 
-    return qb.getRawMany();
+    const rows = await qb.getRawMany<{ productId: string; name: string; qty: string }>();
+    return rows.map(r => ({ productId: r.productId, name: r.name, qty: Number(r.qty) }));
   }
 
-  // 🔹 Productos con stock crítico
+  // Productos con stock crítico
   async criticalStock() {
-    const critical = await this.products.createQueryBuilder('p')
+    return this.products.createQueryBuilder('p')
       .where('p.stock <= p.stockMin')
+      .orderBy('p.stock', 'ASC')
       .getMany();
-
-    return critical;
   }
 }

@@ -11,19 +11,10 @@ export class ReportsController {
 
   @Get('sales')
   @Roles('ADMIN')
-  sales(@Query('from') from?: string, @Query('to') to?: string) {
-    return this.service.sales(from, to);
-  }
-
-  @Get('products/top')
-  @Roles('ADMIN')
-  topProducts(@Query('limit') limit?: string) {
-    return this.service.topProducts(limit ? parseInt(limit, 10) : 5);
-  }
-
-  @Get('stock/critical')
-  @Roles('ADMIN')
-  criticalStock() {
-    return this.service.criticalStock();
+  sales(
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
+    return this.service.salesReport(new Date(start), new Date(end));
   }
 }

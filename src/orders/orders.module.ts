@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { OrdersController } from './orders.controller';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
@@ -13,7 +13,7 @@ import { CashModule } from '../cash/cash.module'; // 👈 relativo
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Product, Customer]),
     StockModule,
-    CashModule, // 👈 para inyectar CashService
+    CashModule, // 👈 necesario
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

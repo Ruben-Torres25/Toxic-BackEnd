@@ -10,10 +10,13 @@ import { PurchasesModule } from './purchases/purchases.module';
 import { StockModule } from './stock/stock.module';
 import { CashModule } from './cash/cash.module';
 import ormconfig from './config/ormconfig';
+import { ReportsModule } from './reports/reports.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(ormconfig),
+    AuthModule,
     ProductsModule,
     OrdersModule,
     CustomersModule,
@@ -21,6 +24,7 @@ import ormconfig from './config/ormconfig';
     PurchasesModule,
     StockModule,
     CashModule, // 👈 aquí
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
