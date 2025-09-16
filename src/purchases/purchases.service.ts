@@ -12,15 +12,15 @@ import { CashService } from '../cash/cash.service';
 @Injectable()
 export class PurchasesService {
   constructor(
-    @InjectRepository(Purchase) private purchases: Repository<Purchase>,
-    @InjectRepository(PurchaseItem) private items: Repository<PurchaseItem>,
-    @InjectRepository(Product) private products: Repository<Product>,
-    @InjectRepository(Supplier) private suppliers: Repository<Supplier>,
-    private stockService: StockService,
-    private cashService: CashService,
+    @InjectRepository(Purchase) private readonly purchases: Repository<Purchase>,
+    @InjectRepository(PurchaseItem) private readonly items: Repository<PurchaseItem>,
+    @InjectRepository(Product) private readonly products: Repository<Product>,
+    @InjectRepository(Supplier) private readonly suppliers: Repository<Supplier>,
+    private readonly stockService: StockService,
+    private readonly cashService: CashService,
   ) {}
 
-  async findAll() {
+  findAll() {
     return this.purchases.find({ relations: ['items', 'supplier'] });
   }
 
@@ -29,16 +29,13 @@ export class PurchasesService {
     if (!supplier) throw new NotFoundException('Proveedor no encontrado');
 
     let total = 0;
-    const purchase = this.purchases.create({
-      supplier,
-      items: [],
-    });
+    const purchase = this.purchases.create({ supplier, items: [] });
 
     for (const it of dto.items) {
       const p = await this.products.findOne({ where: { id: it.productId } });
       if (!p) throw new NotFoundException('Producto no encontrado');
 
-      const subtotal = it.price * it.qty;
+      const subtotal = Number(it.price) * Number(it.qty);
       total += subtotal;
 
       const item = this.items.create({
@@ -61,15 +58,15 @@ export class PurchasesService {
     }
 
     purchase.total = total;
-    await this.purchases.save(purchase);
+    const saved = await this.purchases.save(purchase);
 
-    // 👇 Registrar gasto en caja
+    // 👇 Egreso en caja
     await this.cashService.create({
       type: 'EXPENSE',
       amount: total,
       reason: `Compra proveedor - ${supplier.name}`,
     });
 
-    return purchase;
+    return saved; // 👈 devolvemos id/total/etc
   }
 }

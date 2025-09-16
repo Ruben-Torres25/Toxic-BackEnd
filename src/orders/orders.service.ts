@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
@@ -12,16 +12,16 @@ import { CashService } from '../cash/cash.service';
 @Injectable()
 export class OrdersService {
   constructor(
-    @InjectRepository(Order) private orders: Repository<Order>,
-    @InjectRepository(OrderItem) private items: Repository<OrderItem>,
-    @InjectRepository(Product) private products: Repository<Product>,
-    @InjectRepository(Customer) private customers: Repository<Customer>,
-    private dataSource: DataSource,
-    private stockService: StockService,
-    private cashService: CashService, // 👈 agregado
+    @InjectRepository(Order) private readonly orders: Repository<Order>,
+    @InjectRepository(OrderItem) private readonly items: Repository<OrderItem>,
+    @InjectRepository(Product) private readonly products: Repository<Product>,
+    @InjectRepository(Customer) private readonly customers: Repository<Customer>,
+    private readonly dataSource: DataSource,
+    private readonly stockService: StockService,
+    private readonly cashService: CashService,
   ) {}
 
-  async list() {
+  list() {
     return this.orders.find({
       relations: ['items', 'items.product', 'customer'],
       order: { createdAt: 'DESC' },
@@ -29,9 +29,7 @@ export class OrdersService {
   }
 
   async create(dto: CreateOrderDto) {
-    if (!dto.items || dto.items.length === 0) {
-      throw new BadRequestException('Order must have items');
-    }
+    if (!dto.items?.length) throw new BadRequestException('Order must have items');
 
     let subtotal = 0;
     const order = this.orders.create({
@@ -59,7 +57,6 @@ export class OrdersService {
 
     order.subtotal = subtotal;
     order.total = subtotal - (order.discount || 0);
-
     return this.orders.save(order);
   }
 
@@ -71,7 +68,7 @@ export class OrdersService {
     if (!order) throw new NotFoundException('Order not found');
     if (order.status !== 'PENDIENTE') throw new BadRequestException('Estado inválido');
 
-    await this.dataSource.transaction(async (trx) => {
+    await this.dataSource.transaction(async trx => {
       for (const it of order.items) {
         const p = await trx.getRepository(Product).findOne({ where: { id: it.product.id } });
         if (!p) throw new NotFoundException('Producto no encontrado');
@@ -91,7 +88,7 @@ export class OrdersService {
       order.status = 'COMPLETADO';
       await trx.getRepository(Order).save(order);
 
-      // 👇 Registrar ingreso en caja
+      // 👇 Ingreso en caja
       await this.cashService.create({
         type: 'INCOME',
         amount: Number(order.total),
@@ -108,11 +105,9 @@ export class OrdersService {
       relations: ['items', 'items.product'],
     });
     if (!order) throw new NotFoundException('Order not found');
-    if (order.status !== 'PENDIENTE') {
-      throw new BadRequestException('Solo se pueden cancelar pedidos pendientes');
-    }
+    if (order.status !== 'PENDIENTE') throw new BadRequestException('Solo se pueden cancelar pedidos pendientes');
 
-    await this.dataSource.transaction(async (trx) => {
+    await this.dataSource.transaction(async trx => {
       for (const it of order.items) {
         const p = await trx.getRepository(Product).findOne({ where: { id: it.product.id } });
         if (!p) throw new NotFoundException('Producto no encontrado');
@@ -127,6 +122,7 @@ export class OrdersService {
           reason: `Cancelación de pedido ${order.id}`,
         });
       }
+
       order.status = 'CANCELADO';
       await trx.getRepository(Order).save(order);
     });

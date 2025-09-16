@@ -6,8 +6,8 @@ import { CashController } from './cash.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CashMovement])],
-  providers: [CashService],
   controllers: [CashController],
-  exports: [CashService],
+  providers: [CashService],
+  exports: [CashService], // 👈 necesario para Orders/Purchases
 })
 export class CashModule {}
