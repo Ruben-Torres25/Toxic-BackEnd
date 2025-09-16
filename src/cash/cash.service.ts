@@ -6,15 +6,12 @@ import { CashMovement } from './entities/cash-movement.entity';
 @Injectable()
 export class CashService {
   constructor(
-    @InjectRepository(CashMovement) private repo: Repository<CashMovement>,
+    @InjectRepository(CashMovement)
+    private repo: Repository<CashMovement>,
   ) {}
 
-  async create(data: { type: 'INCOME' | 'EXPENSE'; amount: number; reason?: string }) {
-    const movement = this.repo.create({
-      type: data.type,
-      amount: data.amount,
-      reason: data.reason,
-    });
+  async create(body: { type: 'INCOME' | 'EXPENSE'; amount: number; reason?: string }) {
+    const movement = this.repo.create(body);
     return this.repo.save(movement);
   }
 
@@ -23,9 +20,13 @@ export class CashService {
   }
 
   async getBalance() {
-    const all = await this.repo.find();
-    const income = all.filter(m => m.type === 'INCOME').reduce((sum, m) => sum + Number(m.amount), 0);
-    const expense = all.filter(m => m.type === 'EXPENSE').reduce((sum, m) => sum + Number(m.amount), 0);
+    const movements = await this.repo.find();
+    const income = movements
+      .filter(m => m.type === 'INCOME')
+      .reduce((sum, m) => sum + Number(m.amount), 0);
+    const expense = movements
+      .filter(m => m.type === 'EXPENSE')
+      .reduce((sum, m) => sum + Number(m.amount), 0);
     return { income, expense, balance: income - expense };
   }
 }

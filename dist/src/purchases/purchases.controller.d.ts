@@ -4,7 +4,5 @@ export declare class PurchasesController {
     private readonly service;
     constructor(service: PurchasesService);
     list(): Promise<import("./entities/purchase.entity").Purchase[]>;
-    create(dto: CreatePurchaseDto): Promise<{
-        ok: boolean;
-    }>;
+    create(dto: CreatePurchaseDto): Promise<import("./entities/purchase.entity").Purchase>;
 }

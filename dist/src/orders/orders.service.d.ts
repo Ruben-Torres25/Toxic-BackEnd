@@ -5,6 +5,7 @@ import { Product } from '../products/entities/product.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { StockService } from '../stock/stock.service';
+import { CashService } from '../cash/cash.service';
 export declare class OrdersService {
     private orders;
     private items;
@@ -12,7 +13,8 @@ export declare class OrdersService {
     private customers;
     private dataSource;
     private stockService;
-    constructor(orders: Repository<Order>, items: Repository<OrderItem>, products: Repository<Product>, customers: Repository<Customer>, dataSource: DataSource, stockService: StockService);
+    private cashService;
+    constructor(orders: Repository<Order>, items: Repository<OrderItem>, products: Repository<Product>, customers: Repository<Customer>, dataSource: DataSource, stockService: StockService, cashService: CashService);
     list(): Promise<Order[]>;
     create(dto: CreateOrderDto): Promise<Order>;
     confirm(orderId: string): Promise<{

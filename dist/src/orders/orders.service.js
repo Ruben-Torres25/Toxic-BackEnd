@@ -21,14 +21,16 @@ const order_item_entity_1 = require("./entities/order-item.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const customer_entity_1 = require("../customers/entities/customer.entity");
 const stock_service_1 = require("../stock/stock.service");
+const cash_service_1 = require("../cash/cash.service");
 let OrdersService = class OrdersService {
-    constructor(orders, items, products, customers, dataSource, stockService) {
+    constructor(orders, items, products, customers, dataSource, stockService, cashService) {
         this.orders = orders;
         this.items = items;
         this.products = products;
         this.customers = customers;
         this.dataSource = dataSource;
         this.stockService = stockService;
+        this.cashService = cashService;
     }
     async list() {
         return this.orders.find({
@@ -59,14 +61,9 @@ let OrdersService = class OrdersService {
             if (!p)
                 throw new common_1.NotFoundException('Producto no encontrado');
             const price = (_a = it.price) !== null && _a !== void 0 ? _a : Number(p.price);
-            const lineTotal = price * it.qty;
-            subtotal += lineTotal;
-            const item = this.items.create({
-                product: p,
-                qty: it.qty,
-                price,
-                subtotal: lineTotal,
-            });
+            const subtotalItem = price * it.qty;
+            subtotal += subtotalItem;
+            const item = this.items.create({ product: p, qty: it.qty, price, subtotal: subtotalItem });
             order.items.push(item);
         }
         order.subtotal = subtotal;
@@ -100,6 +97,11 @@ let OrdersService = class OrdersService {
             }
             order.status = 'COMPLETADO';
             await trx.getRepository(order_entity_1.Order).save(order);
+            await this.cashService.create({
+                type: 'INCOME',
+                amount: Number(order.total),
+                reason: `Ingreso por venta - Pedido ${order.id}`,
+            });
         });
         return { ok: true };
     }
@@ -145,6 +147,7 @@ exports.OrdersService = OrdersService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.DataSource,
-        stock_service_1.StockService])
+        stock_service_1.StockService,
+        cash_service_1.CashService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

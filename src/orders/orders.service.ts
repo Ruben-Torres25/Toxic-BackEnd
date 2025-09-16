@@ -7,6 +7,7 @@ import { Product } from '../products/entities/product.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { StockService } from '../stock/stock.service';
+import { CashService } from '../cash/cash.service';
 
 @Injectable()
 export class OrdersService {
@@ -17,6 +18,7 @@ export class OrdersService {
     @InjectRepository(Customer) private customers: Repository<Customer>,
     private dataSource: DataSource,
     private stockService: StockService,
+    private cashService: CashService, // 👈 agregado
   ) {}
 
   async list() {
@@ -48,17 +50,10 @@ export class OrdersService {
     for (const it of dto.items) {
       const p = await this.products.findOne({ where: { id: it.productId } });
       if (!p) throw new NotFoundException('Producto no encontrado');
-
       const price = it.price ?? Number(p.price);
-      const lineTotal = price * it.qty;
-      subtotal += lineTotal;
-
-      const item = this.items.create({
-        product: p,
-        qty: it.qty,
-        price,
-        subtotal: lineTotal,   // 👈 corregido
-      });
+      const subtotalItem = price * it.qty;
+      subtotal += subtotalItem;
+      const item = this.items.create({ product: p, qty: it.qty, price, subtotal: subtotalItem });
       order.items.push(item);
     }
 
@@ -92,8 +87,16 @@ export class OrdersService {
           reason: `Venta confirmada - Pedido ${order.id}`,
         });
       }
+
       order.status = 'COMPLETADO';
       await trx.getRepository(Order).save(order);
+
+      // 👇 Registrar ingreso en caja
+      await this.cashService.create({
+        type: 'INCOME',
+        amount: Number(order.total),
+        reason: `Ingreso por venta - Pedido ${order.id}`,
+      });
     });
 
     return { ok: true };

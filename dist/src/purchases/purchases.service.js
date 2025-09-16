@@ -18,54 +18,61 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const purchase_entity_1 = require("./entities/purchase.entity");
 const purchase_item_entity_1 = require("./entities/purchase-item.entity");
-const supplier_entity_1 = require("../suppliers/entities/supplier.entity");
 const product_entity_1 = require("../products/entities/product.entity");
+const supplier_entity_1 = require("../suppliers/entities/supplier.entity");
 const stock_service_1 = require("../stock/stock.service");
+const cash_service_1 = require("../cash/cash.service");
 let PurchasesService = class PurchasesService {
-    constructor(purchases, items, suppliers, products, dataSource, stockService) {
+    constructor(purchases, items, products, suppliers, stockService, cashService) {
         this.purchases = purchases;
         this.items = items;
-        this.suppliers = suppliers;
         this.products = products;
-        this.dataSource = dataSource;
+        this.suppliers = suppliers;
         this.stockService = stockService;
+        this.cashService = cashService;
+    }
+    async findAll() {
+        return this.purchases.find({ relations: ['items', 'supplier'] });
     }
     async create(dto) {
         const supplier = await this.suppliers.findOne({ where: { id: dto.supplierId } });
         if (!supplier)
             throw new common_1.NotFoundException('Proveedor no encontrado');
         let total = 0;
-        const items = [];
-        await this.dataSource.transaction(async (trx) => {
-            for (const it of dto.items) {
-                const product = await this.products.findOne({ where: { id: it.productId } });
-                if (!product)
-                    throw new common_1.NotFoundException('Producto no encontrado');
-                const subtotal = Number(it.price) * it.qty;
-                total += subtotal;
-                product.stock += it.qty;
-                product.cost = it.price;
-                await trx.getRepository(product_entity_1.Product).save(product);
-                await this.stockService.create({
-                    productId: product.id,
-                    quantity: it.qty,
-                    type: 'IN',
-                    reason: `Compra a proveedor ${supplier.name}`,
-                });
-                const item = this.items.create({ product, qty: it.qty, price: it.price, subtotal });
-                items.push(item);
-            }
-            const purchase = this.purchases.create({
-                supplier,
-                items,
-                total,
-            });
-            await trx.getRepository(purchase_entity_1.Purchase).save(purchase);
+        const purchase = this.purchases.create({
+            supplier,
+            items: [],
         });
-        return { ok: true };
-    }
-    async findAll() {
-        return this.purchases.find({ order: { createdAt: 'DESC' } });
+        for (const it of dto.items) {
+            const p = await this.products.findOne({ where: { id: it.productId } });
+            if (!p)
+                throw new common_1.NotFoundException('Producto no encontrado');
+            const subtotal = it.price * it.qty;
+            total += subtotal;
+            const item = this.items.create({
+                product: p,
+                qty: it.qty,
+                price: it.price,
+                subtotal,
+            });
+            purchase.items.push(item);
+            p.stock += it.qty;
+            await this.products.save(p);
+            await this.stockService.create({
+                productId: p.id,
+                quantity: it.qty,
+                type: 'IN',
+                reason: `Compra a proveedor - ${supplier.name}`,
+            });
+        }
+        purchase.total = total;
+        await this.purchases.save(purchase);
+        await this.cashService.create({
+            type: 'EXPENSE',
+            amount: total,
+            reason: `Compra proveedor - ${supplier.name}`,
+        });
+        return purchase;
     }
 };
 exports.PurchasesService = PurchasesService;
@@ -73,13 +80,13 @@ exports.PurchasesService = PurchasesService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(purchase_entity_1.Purchase)),
     __param(1, (0, typeorm_1.InjectRepository)(purchase_item_entity_1.PurchaseItem)),
-    __param(2, (0, typeorm_1.InjectRepository)(supplier_entity_1.Supplier)),
-    __param(3, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(2, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(3, (0, typeorm_1.InjectRepository)(supplier_entity_1.Supplier)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.DataSource,
-        stock_service_1.StockService])
+        stock_service_1.StockService,
+        cash_service_1.CashService])
 ], PurchasesService);
 //# sourceMappingURL=purchases.service.js.map
