@@ -63,12 +63,13 @@ export class OrdersService {
   async confirm(orderId: string) {
     const order = await this.orders.findOne({
       where: { id: orderId },
-      relations: ['items', 'items.product'],
+      relations: ['items', 'items.product', 'customer'],
     });
     if (!order) throw new NotFoundException('Order not found');
     if (order.status !== 'PENDIENTE') throw new BadRequestException('Estado inválido');
 
     await this.dataSource.transaction(async trx => {
+      // Descontar stock
       for (const it of order.items) {
         const p = await trx.getRepository(Product).findOne({ where: { id: it.product.id } });
         if (!p) throw new NotFoundException('Producto no encontrado');
@@ -85,11 +86,24 @@ export class OrdersService {
         });
       }
 
+      // Cambiar estado
       order.status = 'COMPLETADO';
       await trx.getRepository(Order).save(order);
 
-      // 👇 Ingreso en caja corregido
+      // Registrar venta en caja
       await this.cashService.recordSale(Number(order.total), order.id);
+
+      // ⚡ Actualizar saldo del cliente
+      if (order.customer) {
+        const customerRepo = trx.getRepository(Customer);
+        const c = await customerRepo.findOne({ where: { id: order.customer.id } });
+        if (!c) throw new NotFoundException('Cliente no encontrado');
+
+        // Por ahora asumimos que paga el total. Más adelante podremos manejar pagos parciales.
+        const newBalance = Number(c.balance) - Number(order.total);
+        c.balance = newBalance.toFixed(2);
+        await customerRepo.save(c);
+      }
     });
 
     return { ok: true };

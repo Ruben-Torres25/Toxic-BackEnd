@@ -1,20 +1,33 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity('customers')
 export class Customer {
-  @PrimaryGeneratedColumn('uuid') id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column() name: string;
+  @Column()
+  name: string;
 
-  @Column({ default: '' }) phone: string;
+  @Column({ nullable: true })
+  phone: string;
 
-  @Column({ default: '' }) email: string;
+  @Column({ nullable: true })
+  email: string;
 
-  @Column({ default: '' }) address: string;
+  @Column({ nullable: true })
+  address: string;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  balance: number;
+  // 💰 Saldo del cliente (positivo = a favor, negativo = deuda)
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  balance: string;
 
-  @CreateDateColumn() createdAt: Date;
-  @UpdateDateColumn() updatedAt: Date;
+  @OneToMany(() => Order, o => o.customer)
+  orders: Order[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
