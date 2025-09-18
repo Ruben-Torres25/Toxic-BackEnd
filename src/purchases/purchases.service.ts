@@ -1,72 +1,78 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Purchase } from './entities/purchase.entity';
 import { PurchaseItem } from './entities/purchase-item.entity';
-import { Product } from '../products/entities/product.entity';
-import { Supplier } from '../suppliers/entities/supplier.entity';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
-import { StockService } from '../stock/stock.service';
-import { CashService } from '../cash/cash.service';
+import { Supplier } from '../suppliers/entities/supplier.entity';
+import { Product } from '../products/entities/product.entity';
 
 @Injectable()
 export class PurchasesService {
   constructor(
-    @InjectRepository(Purchase) private readonly purchases: Repository<Purchase>,
-    @InjectRepository(PurchaseItem) private readonly items: Repository<PurchaseItem>,
-    @InjectRepository(Product) private readonly products: Repository<Product>,
-    @InjectRepository(Supplier) private readonly suppliers: Repository<Supplier>,
-    private readonly stockService: StockService,
-    private readonly cashService: CashService,
+    private readonly dataSource: DataSource,
+    @InjectRepository(Purchase) private readonly purchaseRepo: Repository<Purchase>,
+    @InjectRepository(PurchaseItem) private readonly itemRepo: Repository<PurchaseItem>,
+    @InjectRepository(Supplier) private readonly supplierRepo: Repository<Supplier>,
+    @InjectRepository(Product) private readonly productRepo: Repository<Product>,
   ) {}
 
-  findAll() {
-    return this.purchases.find({ relations: ['items', 'supplier'] });
+  async create(dto: CreatePurchaseDto) {
+    if (!dto.items?.length) throw new BadRequestException('La compra debe tener ítems.');
+
+    const supplier = await this.supplierRepo.findOne({ where: { id: dto.supplierId } });
+    if (!supplier) throw new BadRequestException('Proveedor inválido.');
+
+    return this.dataSource.transaction(async manager => {
+      // cargar productos y validar
+      const productIds = dto.items.map(i => i.productId);
+      const products = await manager.getRepository(Product).findByIds(productIds as any);
+      const productsMap = new Map(products.map(p => [p.id, p]));
+      if (products.length !== productIds.length) {
+        throw new BadRequestException('Uno o más productos no existen.');
+      }
+
+      // construir compra
+      const items: PurchaseItem[] = [];
+      let total = 0;
+
+      for (const it of dto.items) {
+        const prod = productsMap.get(it.productId)!;
+        const subtotal = it.quantity * it.unitCost;
+        total += subtotal;
+
+        const item = manager.create(PurchaseItem, {
+          product: prod,
+          quantity: it.quantity,
+          unitCost: it.unitCost.toFixed(2),
+          subtotal: subtotal.toFixed(2),
+        });
+        items.push(item);
+
+        // aumentar stock
+        const newStock = Number(prod.stock ?? 0) + it.quantity;
+        await manager.getRepository(Product).update({ id: prod.id }, { stock: newStock });
+      }
+
+      const purchase = manager.create(Purchase, {
+        supplier,
+        items,
+        total: total.toFixed(2),
+        purchasedAt: new Date(dto.purchasedAt),
+        notes: dto.notes ?? null,
+      });
+
+      return manager.save(purchase);
+    });
   }
 
-  async create(dto: CreatePurchaseDto) {
-    const supplier = await this.suppliers.findOne({ where: { id: dto.supplierId } });
-    if (!supplier) throw new NotFoundException('Proveedor no encontrado');
+  findAll() {
+    return this.purchaseRepo.find({ order: { purchasedAt: 'DESC' } });
+  }
 
-    let total = 0;
-    const purchase = this.purchases.create({ supplier, items: [] });
-
-    for (const it of dto.items) {
-      const p = await this.products.findOne({ where: { id: it.productId } });
-      if (!p) throw new NotFoundException('Producto no encontrado');
-
-      const subtotal = Number(it.price) * Number(it.qty);
-      total += subtotal;
-
-      const item = this.items.create({
-        product: p,
-        qty: it.qty,
-        price: it.price,
-        subtotal,
-      });
-      purchase.items.push(item);
-
-      p.stock += it.qty;
-      await this.products.save(p);
-
-      await this.stockService.create({
-        productId: p.id,
-        quantity: it.qty,
-        type: 'IN',
-        reason: `Compra a proveedor - ${supplier.name}`,
-      });
-    }
-
-    purchase.total = total;
-    const saved = await this.purchases.save(purchase);
-
-    // 👇 Egreso en caja
-    await this.cashService.create({
-      type: 'EXPENSE',
-      amount: total,
-      reason: `Compra proveedor - ${supplier.name}`,
-    });
-
-    return saved; // 👈 devolvemos id/total/etc
+  async findOne(id: string) {
+    const p = await this.purchaseRepo.findOne({ where: { id } });
+    if (!p) throw new BadRequestException('Compra no encontrada.');
+    return p;
   }
 }

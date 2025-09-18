@@ -1,42 +1,35 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Supplier } from './entities/supplier.entity';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @Injectable()
 export class SuppliersService {
-  constructor(@InjectRepository(Supplier) private repo: Repository<Supplier>) {}
-
-  async findAll(query?: string, page = 1, limit = 20) {
-    const where = query ? [
-      { name: ILike(`%${query}%`) },
-      { email: ILike(`%${query}%`) }
-    ] : {};
-    const [data, total] = await this.repo.findAndCount({
-      where,
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
-    return { data, total, page, limit };
-  }
+  constructor(@InjectRepository(Supplier) private readonly repo: Repository<Supplier>) {}
 
   async create(dto: CreateSupplierDto) {
-    return this.repo.save(this.repo.create(dto));
+    const existing = await this.repo.findOne({ where: { name: dto.name } });
+    if (existing) throw new BadRequestException('Ya existe un proveedor con ese nombre.');
+    const entity = this.repo.create(dto);
+    return this.repo.save(entity);
+  }
+
+  findAll() {
+    return this.repo.find({ order: { name: 'ASC' } });
   }
 
   async findOne(id: string) {
-    const supplier = await this.repo.findOne({ where: { id } });
-    if (!supplier) throw new NotFoundException('Supplier not found');
-    return supplier;
+    const s = await this.repo.findOne({ where: { id } });
+    if (!s) throw new NotFoundException('Proveedor no encontrado.');
+    return s;
   }
 
   async update(id: string, dto: UpdateSupplierDto) {
-    const supplier = await this.findOne(id);
-    Object.assign(supplier, dto);
-    return this.repo.save(supplier);
+    const s = await this.findOne(id);
+    Object.assign(s, dto);
+    return this.repo.save(s);
   }
 
   async remove(id: string) {

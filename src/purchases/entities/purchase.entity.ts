@@ -4,16 +4,23 @@ import { PurchaseItem } from './purchase-item.entity';
 
 @Entity('purchases')
 export class Purchase {
-  @PrimaryGeneratedColumn('uuid') id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @ManyToOne(() => Supplier, { eager: true })
+  @ManyToOne(() => Supplier, s => s.purchases, { eager: true })
   supplier: Supplier;
 
-  @OneToMany(() => PurchaseItem, (item) => item.purchase, { cascade: true, eager: true })
+  @OneToMany(() => PurchaseItem, i => i.purchase, { cascade: ['insert'], eager: true })
   items: PurchaseItem[];
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  total: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  total: string;
+
+  @Column({ type: 'timestamptz' })
+  purchasedAt: Date;
+
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

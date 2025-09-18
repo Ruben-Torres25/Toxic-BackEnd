@@ -1,21 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PurchasesService } from './purchases.service';
-import { PurchasesController } from './purchases.controller';
 import { Purchase } from './entities/purchase.entity';
 import { PurchaseItem } from './entities/purchase-item.entity';
+import { PurchasesService } from './purchases.service';
+import { PurchasesController } from './purchases.controller';
 import { Supplier } from '../suppliers/entities/supplier.entity';
 import { Product } from '../products/entities/product.entity';
-import { StockModule } from '../stock/stock.module';
-import { CashModule } from '../cash/cash.module'; // 👈 AÑADIDO
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Purchase, PurchaseItem, Supplier, Product]),
-    StockModule,
-    CashModule, // 👈 AÑADIDO
-  ],
+  imports: [TypeOrmModule.forFeature([Purchase, PurchaseItem, Supplier, Product])],
   controllers: [PurchasesController],
   providers: [PurchasesService],
+  exports: [PurchasesService],
 })
 export class PurchasesModule {}

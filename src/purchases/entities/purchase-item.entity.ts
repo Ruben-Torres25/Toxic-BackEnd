@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Purchase } from './purchase.entity';
 import { Product } from '../../products/entities/product.entity';
 
@@ -7,18 +7,18 @@ export class PurchaseItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Purchase, (purchase) => purchase.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Purchase, p => p.items, { onDelete: 'CASCADE' })
   purchase: Purchase;
 
   @ManyToOne(() => Product, { eager: true })
   product: Product;
 
-  @Column('int')
-  qty: number;
+  @Column({ type: 'int' })
+  quantity: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  price: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  unitCost: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  subtotal: number; // 👈 igual que en order_items
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  subtotal: string;
 }

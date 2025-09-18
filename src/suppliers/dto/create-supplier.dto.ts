@@ -1,8 +1,22 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateSupplierDto {
-  @IsString() @IsNotEmpty() name: string;
-  @IsString() @IsOptional() phone?: string;
-  @IsEmail() @IsOptional() email?: string;
-  @IsString() @IsOptional() address?: string;
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  contactName?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
 }

@@ -1,7 +1,7 @@
 import { IsArray, IsDateString, IsOptional, IsString, ValidateNested, IsUUID, IsInt, Min, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreatePurchaseItemInput {
+class PurchaseItemInput {
   @IsUUID()
   productId: string;
 
@@ -20,11 +20,11 @@ export class CreatePurchaseDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreatePurchaseItemInput)
-  items: CreatePurchaseItemInput[];
+  @Type(() => PurchaseItemInput)
+  items: PurchaseItemInput[];
 
   @IsDateString()
-  purchasedAt: string; // ISO date
+  purchasedAt: string; // ISO
 
   @IsOptional()
   @IsString()

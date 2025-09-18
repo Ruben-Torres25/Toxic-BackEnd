@@ -1,17 +1,32 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Purchase } from '../../purchases/entities/purchase.entity';
 
 @Entity('suppliers')
 export class Supplier {
-  @PrimaryGeneratedColumn('uuid') id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column() name: string;
+  @Column({ unique: true })
+  name: string;
 
-  @Column({ default: '' }) phone: string;
+  @Column({ nullable: true })
+  contactName: string;
 
-  @Column({ default: '' }) email: string;
+  @Column({ nullable: true })
+  phone: string;
 
-  @Column({ default: '' }) address: string;
+  @Column({ nullable: true })
+  email: string;
 
-  @CreateDateColumn() createdAt: Date;
-  @UpdateDateColumn() updatedAt: Date;
+  @Column({ nullable: true })
+  address: string;
+
+  @OneToMany(() => Purchase, p => p.supplier)
+  purchases: Purchase[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

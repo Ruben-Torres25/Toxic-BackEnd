@@ -1,30 +1,23 @@
-import { 
-  Body, 
-  Controller, 
-  Get, 
-  Post, 
-  UseGuards 
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { PurchasesService } from './purchases.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('purchases')
 export class PurchasesController {
   constructor(private readonly service: PurchasesService) {}
 
+  @Post()
+  create(@Body() dto: CreatePurchaseDto) {
+    return this.service.create(dto);
+  }
+
   @Get()
-  @UseGuards(JwtAuthGuard) // cualquier usuario logueado puede ver compras
-  list() {
+  findAll() {
     return this.service.findAll();
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN') // 👈 solo admin puede registrar compras
-  create(@Body() dto: CreatePurchaseDto) {
-    return this.service.create(dto);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 }

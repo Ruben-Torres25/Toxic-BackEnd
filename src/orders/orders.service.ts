@@ -88,12 +88,8 @@ export class OrdersService {
       order.status = 'COMPLETADO';
       await trx.getRepository(Order).save(order);
 
-      // 👇 Ingreso en caja
-      await this.cashService.create({
-        type: 'INCOME',
-        amount: Number(order.total),
-        reason: `Ingreso por venta - Pedido ${order.id}`,
-      });
+      // 👇 Ingreso en caja corregido
+      await this.cashService.recordSale(Number(order.total), order.id);
     });
 
     return { ok: true };
