@@ -1,33 +1,32 @@
-import { DataSourceOptions } from 'typeorm';
-import { config } from 'dotenv';
-config();
+import { DataSource } from 'typeorm';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
 
-const common: Partial<DataSourceOptions> = {
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/../../migrations/*{.ts,.js}'],
+dotenv.config();
+
+export const ormconfig: TypeOrmModuleOptions = {
+  type: 'postgres',
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  entities: [__dirname + '/../**/*.entity.{ts,js}'],
   synchronize: true,
-  logging: false,
+  autoLoadEntities: true,
 };
 
-const dbType = process.env.DB_TYPE ?? 'sqlite';
+// 👉 Para NestJS (AppModule)
+export default ormconfig;
 
-let options: DataSourceOptions;
-if (dbType === 'postgres') {
-  options = {
-    type: 'postgres',
-    host: process.env.PG_HOST,
-    port: Number(process.env.PG_PORT || 5432),
-    username: process.env.PG_USER,
-    password: process.env.PG_PASS,
-    database: process.env.PG_DB,
-    ...common,
-  } as DataSourceOptions;
-} else {
-  options = {
-    type: 'sqlite',
-    database: process.env.SQLITE_DB || 'toxic.db',
-    ...common,
-  } as DataSourceOptions;
-}
-
-export default options;
+// 👉 Para CLI y seed
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  entities: [__dirname + '/../**/*.entity.{ts,js}'],
+  synchronize: true,
+});
